@@ -1,0 +1,58 @@
+classDiagram
+    class Game {
+        - Snake snake
+        - ArrayList~Food~ manzanas
+        - Obstacle obstaculo
+        - boolean gameOver
+        - int score
+        - int lastFoodTime
+        - int currentSpeed
+        + Game()
+        + void update()
+        + void display()
+        + void drawGrid()
+        + void handleKeyPress()
+        + void restart()
+        + void addNewFood()
+        + boolean isFoodOnPosition(int x, int y)
+    }
+    
+    class Snake {
+        - ArrayList~Integer~ posX
+        - ArrayList~Integer~ posY
+        - int direccion
+        - int[] dx
+        - int[] dy
+        + Snake()
+        + void move()
+        + void tail()
+        + void grow()
+        + void display()
+        + void changeDirection(char key)
+        + boolean isOnPosition(int x, int y)
+    }
+    
+    class Food {
+        - int x
+        - int y
+        + Food()
+        + void reposition()
+        + void display()
+    }
+    
+    class Obstacle {
+        - int x
+        - int y
+        + Obstacle()
+        + void reposition()
+        + void display()
+    }
+    
+    Game "1" --o "1" Snake : contiene
+    Game "1" --o "*" Food : contiene múltiples
+    Game "1" --o "1" Obstacle : contiene
+    
+    note for Game "Clase principal que controla\nel flujo del juego, maneja\nmúltiples manzanas y velocidad\nvariable"
+    note for Snake "Representa la serpiente\ncon movimiento y crecimiento"
+    note for Food "Comida que hace crecer\na la serpiente - múltiples\ninstancias"
+    note for Obstacle "Obstáculo que termina\nel juego al tocarlo"
