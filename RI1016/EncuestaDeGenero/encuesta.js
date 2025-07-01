@@ -1,3 +1,5 @@
+const GOOGLE_SHEET_URL = "https://script.google.com/a/macros/tec.mx/s/AKfycbxIcTC-5IdYEYzZ2COrnmt4PqdQB_GcWLn0Ld8NEaHIiNnIGKUM1dPomoPAWLRz7vNV/exec"
+
 let currentSection = 0;
 const totalSections = 2;
 let surveyData = JSON.parse(localStorage.getItem('surveyData') || '[]');
@@ -41,13 +43,25 @@ function submitSurvey() {
     for (let [key, value] of formData.entries()) {
         responses[key] = value;
     }
-    surveyData.push(responses);
-    localStorage.setItem('surveyData', JSON.stringify(surveyData));
-    updateParticipantCounter();
-    document.getElementById('resultsSection').classList.add('show');
-    document.getElementById('surveyForm').style.display = 'none';
-    document.querySelector('.navigation-buttons').style.display = 'none';
-    window.scrollTo(0,0);
+    // Enviar a Google Sheets
+    fetch(GOOGLE_SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(responses)
+    }).then(() => {
+        // También guardar en localStorage para análisis local
+        let surveyData = JSON.parse(localStorage.getItem('surveyData') || '[]');
+        surveyData.push(responses);
+        localStorage.setItem('surveyData', JSON.stringify(surveyData));
+        updateParticipantCounter();
+        document.getElementById('resultsSection').classList.add('show');
+        document.getElementById('surveyForm').style.display = 'none';
+        document.querySelector('.navigation-buttons').style.display = 'none';
+        window.scrollTo(0,0);
+    });
 }
 
 function resetSurvey() {
