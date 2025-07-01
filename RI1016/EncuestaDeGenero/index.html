@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encuesta de Percepciones de Género A01773374</title>
-    <link rel="stylesheet" href=" styles.css">
+    <title>Encuesta de Percepciones de Género</title>
+    <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
     <div class="survey-container">
         <div class="header">
             <h1>Encuesta de Percepciones de Género</h1>
-            <p> Materia RI1016 - a01773374 (ileana TC)</p>
-            <p><strong>Tiempo estimado:</strong> 10-15 minutos</p>
+            <p>Por favor, responde seleccionando un valor del 1 (Totalmente en desacuerdo) al 5 (Totalmente de acuerdo) para cada afirmación.</p>
+            <p><strong>Tiempo estimado:</strong> 3-5 minutos</p>
         </div>
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
@@ -19,7 +19,6 @@
         <form id="surveyForm">
             <div class="question-section active" data-section="0">
                 <h3>Información Básica</h3>
-                <p>Comencemos con información demográfica básica.</p>
                 <div class="form-group">
                     <label>Rango de Edad:</label>
                     <div class="radio-group">
@@ -72,204 +71,85 @@
                 </div>
             </div>
             <div class="question-section" data-section="1">
-                <h3>Pregunta 1: Definiendo la Feminidad</h3>
-                <p>¿Cuáles crees que son las cualidades más importantes que definen ser mujer en la sociedad actual?</p>
-                <p><em>Por favor, enumera 3-5 cualidades y explica brevemente por qué.</em></p>
-                <div class="qualities-input">
-                    <div class="quality-item">
-                        <div class="quality-number">1</div>
-                        <input type="text" name="woman_quality_1" class="form-control" placeholder="Cualidad 1">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">2</div>
-                        <input type="text" name="woman_quality_2" class="form-control" placeholder="Cualidad 2">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">3</div>
-                        <input type="text" name="woman_quality_3" class="form-control" placeholder="Cualidad 3">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">4</div>
-                        <input type="text" name="woman_quality_4" class="form-control" placeholder="Cualidad 4 (opcional)">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">5</div>
-                        <input type="text" name="woman_quality_5" class="form-control" placeholder="Cualidad 5 (opcional)">
+                <h3>Afirmaciones sobre percepción de género</h3>
+                <div class="form-group">
+                    <label for="q1">1. Considero que en mi entorno existen expectativas diferentes para hombres y mujeres.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q1" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q1" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q1" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q1" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q1" value="5"><span class="scale-label">5</span></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="woman_explanation">Breve explicación de tus elecciones:</label>
-                    <textarea name="woman_explanation" class="form-control" placeholder="¿Por qué son importantes estas cualidades?"></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="2">
-                <h3>Pregunta 2: Definiendo la Masculinidad</h3>
-                <p>¿Cuáles crees que son las cualidades más importantes que definen ser hombre en la sociedad actual?</p>
-                <p><em>Por favor, enumera 3-5 cualidades y explica brevemente por qué.</em></p>
-                <div class="qualities-input">
-                    <div class="quality-item">
-                        <div class="quality-number">1</div>
-                        <input type="text" name="man_quality_1" class="form-control" placeholder="Cualidad 1">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">2</div>
-                        <input type="text" name="man_quality_2" class="form-control" placeholder="Cualidad 2">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">3</div>
-                        <input type="text" name="man_quality_3" class="form-control" placeholder="Cualidad 3">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">4</div>
-                        <input type="text" name="man_quality_4" class="form-control" placeholder="Cualidad 4 (opcional)">
-                    </div>
-                    <div class="quality-item">
-                        <div class="quality-number">5</div>
-                        <input type="text" name="man_quality_5" class="form-control" placeholder="Cualidad 5 (opcional)">
+                    <label for="q2">2. Creo que las mujeres deben ser comprensivas y emocionales.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q2" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q2" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q2" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q2" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q2" value="5"><span class="scale-label">5</span></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="man_explanation">Breve explicación de tus elecciones:</label>
-                    <textarea name="man_explanation" class="form-control" placeholder="¿Por qué son importantes estas cualidades?"></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="3">
-                <h3>Pregunta 3: Expectativas Sociales</h3>
-                <p>¿Qué tan de acuerdo estás con esta afirmación: <strong>"La sociedad espera comportamientos diferentes de mujeres y hombres"</strong></p>
-                <div class="scale-group">
-                    <div class="scale-item">
-                        <input type="radio" name="social_expectations" value="1" id="exp1">
-                        <label for="exp1" class="scale-label">1<br>Totalmente en desacuerdo</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="social_expectations" value="2" id="exp2">
-                        <label for="exp2" class="scale-label">2<br>En desacuerdo</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="social_expectations" value="3" id="exp3">
-                        <label for="exp3" class="scale-label">3<br>Neutral</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="social_expectations" value="4" id="exp4">
-                        <label for="exp4" class="scale-label">4<br>De acuerdo</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="social_expectations" value="5" id="exp5">
-                        <label for="exp5" class="scale-label">5<br>Totalmente de acuerdo</label>
+                    <label for="q3">3. Considero que los hombres deben ser fuertes y protectores.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q3" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q3" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q3" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q3" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q3" value="5"><span class="scale-label">5</span></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="expectations_explanation">Por favor explica tu puntuación:</label>
-                    <textarea name="expectations_explanation" class="form-control" placeholder="¿Por qué elegiste esta puntuación?"></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="4">
-                <h3>Pregunta 4: Perspectivas Personales vs. Sociales</h3>
-                <p>¿Crees que tu definición personal de lo que significa ser mujer/hombre difiere de las expectativas generales de la sociedad?</p>
-                <div class="form-group">
-                    <div class="radio-group">
-                        <div class="radio-item">
-                            <input type="radio" name="personal_vs_social" value="Sí, significativamente diferente" id="diff1">
-                            <label for="diff1">Sí, significativamente diferente</label>
-                        </div>
-                        <div class="radio-item">
-                            <input type="radio" name="personal_vs_social" value="Sí, algo diferente" id="diff2">
-                            <label for="diff2">Sí, algo diferente</label>
-                        </div>
-                        <div class="radio-item">
-                            <input type="radio" name="personal_vs_social" value="No, se alinean estrechamente" id="diff3">
-                            <label for="diff3">No, se alinean estrechamente</label>
-                        </div>
-                        <div class="radio-item">
-                            <input type="radio" name="personal_vs_social" value="No estoy seguro/a" id="diff4">
-                            <label for="diff4">No estoy seguro/a</label>
-                        </div>
+                    <label for="q4">4. Actualmente, la sociedad es más flexible con los roles de género que hace 10 años.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q4" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q4" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q4" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q4" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q4" value="5"><span class="scale-label">5</span></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="difference_explanation">Si difieren, ¿cómo difieren?</label>
-                    <textarea name="difference_explanation" class="form-control" placeholder="Explica las diferencias entre tus perspectivas personales y las expectativas sociales..."></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="5">
-                <h3>Pregunta 5: Evolución de la Feminidad</h3>
-                <p>¿Cómo crees que ha cambiado la definición de ser mujer en los últimos 20 años?</p>
-                <div class="form-group">
-                    <textarea name="woman_evolution" class="form-control" placeholder="Describe cómo han evolucionado los roles y expectativas de las mujeres..."></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="6">
-                <h3>Pregunta 6: Evolución de la Masculinidad</h3>
-                <p>¿Cómo crees que ha cambiado la definición de ser hombre en los últimos 20 años?</p>
-                <div class="form-group">
-                    <textarea name="man_evolution" class="form-control" placeholder="Describe cómo han evolucionado los roles y expectativas de los hombres..."></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="7">
-                <h3>Pregunta 7: Libertad de Expresión de Género</h3>
-                <p>¿Qué tan importante crees que es que las personas puedan expresar su identidad de género libremente, independientemente de las expectativas tradicionales?</p>
-                <div class="scale-group">
-                    <div class="scale-item">
-                        <input type="radio" name="expression_importance" value="1" id="imp1">
-                        <label for="imp1" class="scale-label">1<br>Nada importante</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="expression_importance" value="2" id="imp2">
-                        <label for="imp2" class="scale-label">2<br>Poco importante</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="expression_importance" value="3" id="imp3">
-                        <label for="imp3" class="scale-label">3<br>Moderadamente importante</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="expression_importance" value="4" id="imp4">
-                        <label for="imp4" class="scale-label">4<br>Muy importante</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="expression_importance" value="5" id="imp5">
-                        <label for="imp5" class="scale-label">5<br>Extremadamente importante</label>
+                    <label for="q5">5. Es importante que las personas puedan expresar libremente su identidad de género.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q5" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q5" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q5" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q5" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q5" value="5"><span class="scale-label">5</span></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="importance_reasoning">Por favor explica tu razonamiento:</label>
-                    <textarea name="importance_reasoning" class="form-control" placeholder="¿Por qué es significativo este nivel de importancia para ti?"></textarea>
+                    <label for="q6">6. En mi opinión, los roles de género tradicionales siguen teniendo mucha influencia.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q6" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q6" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q6" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q6" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q6" value="5"><span class="scale-label">5</span></div>
+                    </div>
                 </div>
-            </div>
-            <div class="question-section" data-section="8">
-                <h3>Pregunta 8: Perspectivas Futuras</h3>
-                <p>¿Cómo imaginas que evolucionarán los roles de género y las definiciones en los próximos 10-20 años?</p>
                 <div class="form-group">
-                    <textarea name="future_vision" class="form-control" placeholder="Describe tus predicciones sobre cómo podrían cambiar los roles de género..."></textarea>
+                    <label for="q7">7. Estoy de acuerdo con que los roles de género deben evolucionar en el futuro.</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q7" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q7" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q7" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q7" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q7" value="5"><span class="scale-label">5</span></div>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="additional_comments">¿Algún comentario adicional sobre identidad de género o roles?</label>
-                    <textarea name="additional_comments" class="form-control" placeholder="Opcional: Comparte cualquier otro pensamiento sobre este tema..."></textarea>
-                </div>
-            </div>
-            <div class="question-section" data-section="9">
-                <h3>Pregunta: Gustos Personales</h3>
-                <p>¿Te gustan los perros?</p>
-                <p><em>Selecciona uno.</em></p>
-                <div class="scale-group">
-                    <div class="scale-item">
-                        <input type="radio" name="like_dogs" value="5" id="dogs5">
-                        <label for="dogs5" class="scale-label">5<br>Estoy totalmente de acuerdo</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="like_dogs" value="4" id="dogs4">
-                        <label for="dogs4" class="scale-label">4<br>Estoy de acuerdo</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="like_dogs" value="3" id="dogs3">
-                        <label for="dogs3" class="scale-label">3<br>Ni de acuerdo ni en desacuerdo</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="like_dogs" value="2" id="dogs2">
-                        <label for="dogs2" class="scale-label">2<br>Discrepar</label>
-                    </div>
-                    <div class="scale-item">
-                        <input type="radio" name="like_dogs" value="1" id="dogs1">
-                        <label for="dogs1" class="scale-label">1<br>Estoy totalmente en desacuerdo</label>
+                    <label for="q8">8. ¿Te gustan los perros? (1 = nada, 5 = mucho)</label>
+                    <div class="scale-group">
+                        <div class="scale-item"><input type="radio" name="q8" value="1"><span class="scale-label">1</span></div>
+                        <div class="scale-item"><input type="radio" name="q8" value="2"><span class="scale-label">2</span></div>
+                        <div class="scale-item"><input type="radio" name="q8" value="3"><span class="scale-label">3</span></div>
+                        <div class="scale-item"><input type="radio" name="q8" value="4"><span class="scale-label">4</span></div>
+                        <div class="scale-item"><input type="radio" name="q8" value="5"><span class="scale-label">5</span></div>
                     </div>
                 </div>
             </div>
