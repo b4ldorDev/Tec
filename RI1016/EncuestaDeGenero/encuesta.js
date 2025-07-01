@@ -1,5 +1,4 @@
 const GOOGLE_SHEET_URL = "https://script.google.com/a/macros/tec.mx/s/AKfycbxIcTC-5IdYEYzZ2COrnmt4PqdQB_GcWLn0Ld8NEaHIiNnIGKUM1dPomoPAWLRz7vNV/exec"
-
 let currentSection = 0;
 const totalSections = 2;
 let surveyData = JSON.parse(localStorage.getItem('surveyData') || '[]');
@@ -34,6 +33,8 @@ function changeSection(n) {
 }
 
 function validateSection(sectionNum) {
+    // Aquí puedes añadir validación si lo deseas
+    // Por ejemplo, verificar que todas las preguntas tienen respuesta
     return true;
 }
 
@@ -43,6 +44,10 @@ function submitSurvey() {
     for (let [key, value] of formData.entries()) {
         responses[key] = value;
     }
+    
+    // Debug: muestra en consola lo que se va a enviar
+    console.log("Datos a enviar:", responses);
+    
     // Enviar a Google Sheets
     fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
@@ -52,15 +57,21 @@ function submitSurvey() {
         },
         body: JSON.stringify(responses)
     }).then(() => {
+        console.log("Datos enviados correctamente");
+        
         // También guardar en localStorage para análisis local
-        let surveyData = JSON.parse(localStorage.getItem('surveyData') || '[]');
         surveyData.push(responses);
         localStorage.setItem('surveyData', JSON.stringify(surveyData));
         updateParticipantCounter();
+        
+        // Actualizar la interfaz
         document.getElementById('resultsSection').classList.add('show');
         document.getElementById('surveyForm').style.display = 'none';
         document.querySelector('.navigation-buttons').style.display = 'none';
         window.scrollTo(0,0);
+    }).catch(error => {
+        console.error("Error al enviar datos:", error);
+        alert("Ha ocurrido un error al enviar tus respuestas. Por favor intenta nuevamente.");
     });
 }
 
