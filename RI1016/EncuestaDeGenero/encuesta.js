@@ -1,4 +1,4 @@
-const GOOGLE_SHEET_URL = "https://script.google.com/a/macros/tec.mx/s/AKfycbxIcTC-5IdYEYzZ2COrnmt4PqdQB_GcWLn0Ld8NEaHIiNnIGKUM1dPomoPAWLRz7vNV/exec"
+const GOOGLE_SHEET_URL = "https://script.google.com/a/macros/tec.mx/s/AKfycbxY2buPb2HoXhmoKz8A8Z4UNJ7eMrsnl77KyI3MB6uWYXqTl2ftCnO3tXqYpUMkHDWl/exec"
 let currentSection = 0;
 const totalSections = 2;
 let surveyData = JSON.parse(localStorage.getItem('surveyData') || '[]');
