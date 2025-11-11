@@ -7,6 +7,7 @@
 
 1. [Introducción y Arquitectura](#1-introducción-y-arquitectura)
 2. [Preparación del Entorno](#2-preparación-del-entorno)
+    #usar un algoritmo de arbol binario de busqueda para poder mejorar la busqueda en base de datos 
 3. [Configuración del Broker MQTT Seguro](#3-configuración-del-broker-mqtt-seguro)
 4. [Sistema de Certificados PKI](#4-sistema-de-certificados-pki)
 5. [Autenticación Multi-Factor](#5-autenticación-multi-factor)
