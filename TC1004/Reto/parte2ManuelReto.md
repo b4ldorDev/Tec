@@ -430,4 +430,182 @@ body { background: #6ec1ff; font-family: 'Press Start 2P', monospace; color: #11
 /* Panel styles */
 .panel { background: rgba(255,255,255,0.9); padding: 12px; margin-top: 12px; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
 
-/* small list styles
+/* small list styles */
+#messages { max-height: 250px; overflow:auto; list-style:none; padding:0; margin:0; }
+#messages li { border-bottom:1px dashed #ccc; padding:6px 2px; font-size:12px; }
+```
+
+8.8 JS para construir el sprite y recibir mensajes (static/js/dashboard.js)
+
+```javascript
+// dashboard.js
+document.addEventListener('DOMContentLoaded', function() {
+  const sprite = document.getElementById('mario');
+  // paleta simple (hex colors)
+  const palette = {
+    '0':'transparent', '1':'#000000','2':'#F94144','3':'#F3722C','4':'#90BE6D',
+    '5':'#577590','6':'#F9C74F','7':'#FFFFFF','#':'#000'
+  };
+  // diseño 16x16 clásico simplificado (array de strings)
+  const mario16 = [
+    "................",
+    ".......11.......",
+    "......1221......",
+    ".....122221.....",
+    "....11222211....",
+    "...1133333311...",
+    "...1333333331...",
+    "..113333333331..",
+    "..1333333333331..",
+    ".13344444443331.",
+    ".13344444443331.",
+    ".13344444443331.",
+    ".1133333333311..",
+    "..1.33333331....",
+    "..1.3333331.....",
+    "...111111......"
+  ];
+  // Render pixels
+  for (let r=0;r<16;r++){
+    for (let c=0;c<16;c++){
+      const ch = mario16[r][c] || '.';
+      const el = document.createElement('div');
+      el.style.background = (ch === '.' ? 'transparent' : (ch === '1' ? '#000' : (ch === '2' ? '#f94144' : (ch === '3' ? '#577590' : (ch === '4' ? '#f9c74f' : '#fff')))));
+      sprite.appendChild(el);
+    }
+  }
+
+  // SOCKET.IO
+  const socket = io();
+  const messages = document.getElementById('messages');
+  const statusList = document.getElementById('status-list');
+  socket.on('connect', () => { console.log('socket connected'); });
+  socket.on('mqtt_message', (data) => {
+    const li = document.createElement('li');
+    li.textContent = `${new Date().toLocaleTimeString()} ${data.topic} ${JSON.stringify(data.payload).slice(0,120)}`;
+    messages.insertBefore(li, messages.firstChild);
+    // ejemplo: actualizar estado si el topic es status
+    if (data.topic.includes('/status')) {
+      const st = document.createElement('li');
+      st.textContent = `${data.payload.device_id || 'device'} -> ${data.payload.status || 'unknown'}`;
+      statusList.insertBefore(st, statusList.firstChild);
+    }
+  });
+});
+```
+
+8.9 Deploy con Gunicorn + Nginx + systemd
+
+- Crear systemd unit `/etc/systemd/system/mqtt-dashboard.service`:
+
+```ini
+[Unit]
+Description=MQTT Dashboard Gunicorn
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/mqtt-dashboard
+Environment="PATH=/opt/mqtt-dashboard/.venv/bin"
+ExecStart=/opt/mqtt-dashboard/.venv/bin/gunicorn -k eventlet -w 1 app.dashboard:create_app --bind 127.0.0.1:5000
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Configurar Nginx reverse proxy y HTTPS con certbot:
+  - Crear server block que redirija / al socket Gunicorn.
+  - Habilitar certbot para dominio público.
+
+8.10 Assets y licencias
+
+- El pixel-art creado en CSS es original y no usa arte protegido.
+- Si quieres sprites exactos de Mario (copyright Nintendo) no lo publiques; usa estilos "inspirados" y sprites originales.
+
+---
+
+## 9. MONITOREO Y AUDITORÍA (completado)
+
+- Ya añadimos MQTTLogger y Dashboard. Recomendaciones:
+  - Centralizar logs en /opt/mqtt-secure/logs y rotar con logrotate.
+  - Integrar alertas a Slack/Email usando webhook cuando se detecten alertas críticas.
+  - Registrar intentos de autenticación, fallos y eventos de ACL.
+
+Ejemplos:
+```bash
+# Ver logs de MQTT secure
+tail -f /var/log/mosquitto/mosquitto.log /var/log/mqtt-secure/auth.log /var/log/mqtt-secure/logger.log
+```
+
+---
+
+## 10. TESTING Y VALIDACIÓN (completado)
+
+Checklist de pruebas integrales:
+
+- Validación PKI:
+  - openssl verify -CAfile /etc/mosquitto/certs/ca.crt /etc/mosquitto/certs/server.crt
+- Prueba de conexión desde ESP32 (simulador o dispositivo real):
+  - Ver en mosquitto.log que el client_id aparece y se autentica con certificado.
+- Prueba HMAC:
+  - Enviar mensaje con HMAC incorrecto y verificar rechazo en middleware y logs.
+- Pruebas de ACL:
+  - Ejecutar `python3 /opt/mqtt-secure/scripts/acl_manager.py validate team2_actuator garden/device/esp002/actuators/pump write` y verificar.
+- Pruebas de Dashboard:
+  - Abrir http://<server>:80 y verificar llegada de mensajes en tiempo real.
+- Pruebas de carga:
+  - Simular N clientes con `mqtt-stresser` o scripts para validar rate limiting.
+
+---
+
+## 11. TROUBLESHOOTING
+
+Listado de problemas comunes y cómo solucionarlos:
+
+1. Broker no arranca después de cambiar TLS:
+   - Ver logs: sudo journalctl -u mosquitto -e
+   - Verifique rutas de certfile/keyfile y permisos (mosquitto:mosquitto).
+2. ESP32 no conecta por TLS:
+   - Asegúrate que NTP esté sincronizado (certificado válido en tiempo).
+   - Revisa fingerprint del certificado cliente en DB.
+   - Activa debugging mbedTLS en ESP32 para ver fallo handshake.
+3. Mensajes llegan sin procesar:
+   - Validar estructura JSON y campos timestamp/signature.
+4. Dashboard no recibe mensajes:
+   - Ver si mqtt_client.start_mqtt() está conectado al broker.
+   - Checar que SocketIO esté corriendo y Nginx proxy_pass correctamente.
+5. Error "permission denied" en publish:
+   - Revisar ACL y reglas para ese usuario/dispositivo.
+6. Leak de secretos (clave pública en repo):
+   - Rotar certificados y claves, invalidar antiguos y volver a emitir certificados.
+7. Latencia alta:
+   - Habilitar QoS adecuados, ajustar keepalive/keepalive_interval.
+8. Problemas con sqlite en concurrencia:
+   - Para producción use Postgres o MySQL; sqlite puede bloquearse con muchos writes.
+
+---
+
+## 12. MANTENIMIENTO Y OPERACIÓN
+
+Plan de operaciones:
+
+- Backups:
+  - Certificados y CA: cifrar y guardar offsite.
+  - Base de datos: dump diario (sqlite3 / pg_dump).
+- Rotación de certificados:
+  - Renovar CA cada X años; certificados clientes/servidores anuales.
+- Parches:
+  - Mantener sistema operativo y mosquitto actualizados.
+- Monitoreo:
+  - Integrar Prometheus/Grafana si necesitas métricas más extensas.
+- Procedimiento de recuperación:
+  - Script de emergencia que restaure CA y server certs desde backup.
+  - Plan de revocación: mantener CRL o usar OCSP si es necesario.
+- Seguridad:
+  - Realizar pentests periódicos (MQTT fuzzing, ACL bypass).
+  - Auditorías regulares de logs y revisión de accesos (principio de least privilege).
+
+---
+
+¿
