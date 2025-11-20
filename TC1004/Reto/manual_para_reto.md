@@ -1608,35 +1608,831 @@ if __name__ == "__main__":
 
 ---
 
-## 6. AUTORIZACIÓN GRANULAR
-
-### 6.1 Archivo de Control de Acceso (ACL)
-
-```bash
-# /etc/mosquitto/acl
-# Control de Acceso Granular para Garden MQTT System
-
-# ============================================================================
-# CONFIGURACIÓN GLOBAL
-# ============================================================================
-# Denegar acceso por defecto
-# Todo debe ser explícitamente permitido
-
-# ============================================================================
-# ADMINISTRADOR DEL SISTEMA
-# ============================================================================
-user garden_admin
-topic readwrite garden/+/+
-topic readwrite $SYS/+
-
-# ============================================================================
-# DISPOSITIVOS ESP8266
-# ============================================================================
-
-# ESP8266 #1 - Sensores
-user ESP8266_001
-topic read garden/device/esp001/config/+
-topic write garden/device/esp001/status
-topic write garden/device/esp001/sensors/+
+Manual Completo: Implementación MQTT Ultra Seguro - CONTINUACIÓN
+6. AUTORIZACIÓN GRANULAR (Continuación)
+6.1 Archivo de Control de Acceso (ACL) - CONTINUACIÓN
+bash# ESP8266 #2 - Actuadores
+user ESP8266_002
+topic read garden/device/esp002/config/+
+topic read garden/team/team2/commands/+
+topic write garden/device/esp002/status
+topic write garden/device/esp002/actuators/+
 topic write garden/system/alerts
 topic write garden/system/health
+
+# ESP8266 #3 - Controlador
+user ESP8266_003
+topic read garden/device/esp003/config/+
+topic read garden/team/team3/commands/+
+topic write garden/device/esp003/status
+topic write garden/device/esp003/controls/+
+topic write garden/system/alerts
+topic write garden/system/health
+
+# ============================================================================
+# MIEMBROS DEL EQUIPO
+# ============================================================================
+
+# Compañero 1 - Responsable de Sensores
+user team1_sensor
+topic read garden/device/esp001/sensors/+
+topic read garden/device/esp001/status
+topic readwrite garden/team/team1/+
+topic read garden/system/health
+
+# Compañero 2 - Responsable de Actuadores
+user team2_actuator
+topic read garden/device/esp002/actuators/+
+topic read garden/device/esp002/status
+topic readwrite garden/team/team2/+
+topic write garden/team/team2/commands/+
+topic read garden/system/health
+
+# Compañero 3 - Responsable de Control
+user team3_control
+topic read garden/device/esp003/controls/+
+topic read garden/device/esp003/status
+topic readwrite garden/team/team3/+
+topic write garden/team/team3/commands/+
+topic read garden/system/health
+topic read garden/device/+/sensors/+
+
+# ============================================================================
+# PATRÓN DE TÓPICOS WILDCARD
+# ============================================================================
+# + = un nivel de jerarquía
+# # = múltiples niveles de jerarquía
+
+# Ejemplo de uso correcto:
+# garden/+/status         -> garden/device/status, garden/team/status
+# garden/device/#         -> garden/device/esp001/sensors/temperature
+# garden/device/+/sensors/+ -> garden/device/esp001/sensors/humidity
+6.2 Script de Gestión de ACL Dinámico
+python#!/usr/bin/env python3
+# /opt/mqtt-secure/scripts/acl_manager.py
+
+import sqlite3
+import re
+import logging
+from datetime import datetime
+
+class ACLManager:
+    def __init__(self, acl_file='/etc/mosquitto/acl', db_path='/opt/mqtt-secure/config/mqtt_users.db'):
+        self.acl_file = acl_file
+        self.db_path = db_path
+        
+        logging.basicConfig(
+            filename='/var/log/mqtt-secure/acl.log',
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+        self.logger = logging.getLogger(__name__)
+    
+    def add_acl_rule(self, username, topic, permission='readwrite'):
+        """
+        Agregar nueva regla ACL
+        
+        Args:
+            username: Usuario o dispositivo
+            topic: Patrón de tópico MQTT
+            permission: 'read', 'write', o 'readwrite'
+        """
+        try:
+            # Validar entrada
+            if permission not in ['read', 'write', 'readwrite']:
+                raise ValueError(f"Permiso inválido: {permission}")
+            
+            # Leer ACL actual
+            with open(self.acl_file, 'r') as f:
+                acl_content = f.readlines()
+            
+            # Buscar sección del usuario
+            user_found = False
+            insert_index = -1
+            
+            for i, line in enumerate(acl_content):
+                if line.strip() == f"user {username}":
+                    user_found = True
+                    insert_index = i + 1
+                elif user_found and line.startswith('user '):
+                    break
+                elif user_found and line.strip():
+                    insert_index = i + 1
+            
+            # Preparar nueva regla
+            new_rule = f"topic {permission} {topic}\n"
+            
+            if user_found:
+                # Insertar en sección existente
+                acl_content.insert(insert_index, new_rule)
+            else:
+                # Crear nueva sección de usuario
+                acl_content.append(f"\nuser {username}\n")
+                acl_content.append(new_rule)
+            
+            # Escribir ACL actualizado
+            with open(self.acl_file, 'w') as f:
+                f.writelines(acl_content)
+            
+            self.logger.info(f"Regla ACL agregada: {username} -> {topic} ({permission})")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error agregando regla ACL: {e}")
+            return False
+    
+    def remove_acl_rule(self, username, topic):
+        """Eliminar regla ACL específica"""
+        try:
+            with open(self.acl_file, 'r') as f:
+                acl_content = f.readlines()
+            
+            new_content = []
+            in_user_section = False
+            
+            for line in acl_content:
+                if line.strip() == f"user {username}":
+                    in_user_section = True
+                    new_content.append(line)
+                elif in_user_section and line.startswith('user '):
+                    in_user_section = False
+                    new_content.append(line)
+                elif in_user_section and topic in line:
+                    # Omitir esta línea (eliminar regla)
+                    self.logger.info(f"Regla eliminada: {line.strip()}")
+                    continue
+                else:
+                    new_content.append(line)
+            
+            with open(self.acl_file, 'w') as f:
+                f.writelines(new_content)
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error eliminando regla ACL: {e}")
+            return False
+    
+    def get_user_permissions(self, username):
+        """Obtener todos los permisos de un usuario"""
+        try:
+            with open(self.acl_file, 'r') as f:
+                acl_content = f.readlines()
+            
+            permissions = []
+            in_user_section = False
+            
+            for line in acl_content:
+                if line.strip() == f"user {username}":
+                    in_user_section = True
+                elif in_user_section and line.startswith('user '):
+                    break
+                elif in_user_section and line.strip().startswith('topic '):
+                    parts = line.strip().split(maxsplit=2)
+                    if len(parts) == 3:
+                        permissions.append({
+                            'permission': parts[1],
+                            'topic': parts[2]
+                        })
+            
+            return permissions
+            
+        except Exception as e:
+            self.logger.error(f"Error obteniendo permisos: {e}")
+            return []
+    
+    def validate_topic_access(self, username, topic, access_type='read'):
+        """Validar si un usuario tiene acceso a un tópico"""
+        permissions = self.get_user_permissions(username)
+        
+        for perm in permissions:
+            if access_type in ['read', 'write'] and perm['permission'] not in [access_type, 'readwrite']:
+                continue
+            
+            # Convertir patrón MQTT a regex
+            pattern = perm['topic'].replace('+', '[^/]+').replace('#', '.*')
+            pattern = f"^{pattern}$"
+            
+            if re.match(pattern, topic):
+                return True
+        
+        return False
+    
+    def generate_acl_report(self):
+        """Generar reporte de todas las ACL configuradas"""
+        try:
+            with open(self.acl_file, 'r') as f:
+                acl_content = f.readlines()
+            
+            report = {
+                'generated_at': datetime.now().isoformat(),
+                'users': {}
+            }
+            
+            current_user = None
+            
+            for line in acl_content:
+                line = line.strip()
+                if line.startswith('user '):
+                    current_user = line.split()[1]
+                    report['users'][current_user] = []
+                elif current_user and line.startswith('topic '):
+                    parts = line.split(maxsplit=2)
+                    if len(parts) == 3:
+                        report['users'][current_user].append({
+                            'permission': parts[1],
+                            'topic': parts[2]
+                        })
+            
+            return report
+            
+        except Exception as e:
+            self.logger.error(f"Error generando reporte ACL: {e}")
+            return None
+    
+    def backup_acl(self):
+        """Crear backup del archivo ACL"""
+        import shutil
+        from datetime import datetime
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_file = f"{self.acl_file}.backup_{timestamp}"
+        
+        try:
+            shutil.copy2(self.acl_file, backup_file)
+            self.logger.info(f"Backup ACL creado: {backup_file}")
+            return backup_file
+        except Exception as e:
+            self.logger.error(f"Error creando backup ACL: {e}")
+            return None
+    
+    def reload_mosquitto_acl(self):
+        """Recargar configuración ACL en Mosquitto"""
+        import subprocess
+        
+        try:
+            # Enviar señal SIGHUP a Mosquitto para recargar config
+            subprocess.run(['sudo', 'systemctl', 'reload', 'mosquitto'], check=True)
+            self.logger.info("ACL recargado en Mosquitto")
+            return True
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"Error recargando Mosquitto: {e}")
+            return False
+
+# Script de línea de comandos
+if __name__ == "__main__":
+    import sys
+    import json
+    
+    acl_manager = ACLManager()
+    
+    if len(sys.argv) < 2:
+        print("""
+Uso: python3 acl_manager.py <comando> [argumentos]
+
+Comandos disponibles:
+    add <usuario> <topic> <permiso>     - Agregar regla ACL
+    remove <usuario> <topic>            - Eliminar regla ACL
+    list <usuario>                      - Listar permisos de usuario
+    validate <usuario> <topic> <tipo>   - Validar acceso a tópico
+    report                              - Generar reporte completo
+    backup                              - Crear backup de ACL
+    reload                              - Recargar configuración en Mosquitto
+
+Ejemplos:
+    python3 acl_manager.py add team1_sensor garden/device/esp001/sensors/+ read
+    python3 acl_manager.py list garden_admin
+    python3 acl_manager.py validate team2_actuator garden/device/esp002/actuators/pump write
+""")
+        sys.exit(1)
+    
+    command = sys.argv[1]
+    
+    if command == 'add':
+        if len(sys.argv) != 5:
+            print("Error: add requiere <usuario> <topic> <permiso>")
+            sys.exit(1)
+        
+        username = sys.argv[2]
+        topic = sys.argv[3]
+        permission = sys.argv[4]
+        
+        if acl_manager.add_acl_rule(username, topic, permission):
+            print(f"✓ Regla agregada exitosamente")
+            acl_manager.reload_mosquitto_acl()
+        else:
+            print("✗ Error agregando regla")
+            sys.exit(1)
+    
+    elif command == 'remove':
+        if len(sys.argv) != 4:
+            print("Error: remove requiere <usuario> <topic>")
+            sys.exit(1)
+        
+        username = sys.argv[2]
+        topic = sys.argv[3]
+        
+        if acl_manager.remove_acl_rule(username, topic):
+            print(f"✓ Regla eliminada exitosamente")
+            acl_manager.reload_mosquitto_acl()
+        else:
+            print("✗ Error eliminando regla")
+            sys.exit(1)
+    
+    elif command == 'list':
+        if len(sys.argv) != 3:
+            print("Error: list requiere <usuario>")
+            sys.exit(1)
+        
+        username = sys.argv[2]
+        permissions = acl_manager.get_user_permissions(username)
+        
+        print(f"\nPermisos para usuario: {username}")
+        print("-" * 60)
+        for perm in permissions:
+            print(f"  {perm['permission']:10s} -> {perm['topic']}")
+        print()
+    
+    elif command == 'validate':
+        if len(sys.argv) != 5:
+            print("Error: validate requiere <usuario> <topic> <tipo>")
+            sys.exit(1)
+        
+        username = sys.argv[2]
+        topic = sys.argv[3]
+        access_type = sys.argv[4]
+        
+        has_access = acl_manager.validate_topic_access(username, topic, access_type)
+        
+        if has_access:
+            print(f"✓ {username} TIENE acceso {access_type} a {topic}")
+        else:
+            print(f"✗ {username} NO TIENE acceso {access_type} a {topic}")
+    
+    elif command == 'report':
+        report = acl_manager.generate_acl_report()
+        
+        if report:
+            print(json.dumps(report, indent=2))
+        else:
+            print("✗ Error generando reporte")
+            sys.exit(1)
+    
+    elif command == 'backup':
+        backup_file = acl_manager.backup_acl()
+        
+        if backup_file:
+            print(f"✓ Backup creado: {backup_file}")
+        else:
+            print("✗ Error creando backup")
+            sys.exit(1)
+    
+    elif command == 'reload':
+        if acl_manager.reload_mosquitto_acl():
+            print("✓ Mosquitto recargado exitosamente")
+        else:
+            print("✗ Error recargando Mosquitto")
+            sys.exit(1)
+    
+    else:
+        print(f"Comando desconocido: {command}")
+        sys.exit(1)
+
+7. IMPLEMENTACIÓN ESP8266
+7.1 Código Base para ESP8266 con Seguridad TLS
+cpp// garden_mqtt_secure.ino
+// Código para ESP8266 con autenticación TLS y HMAC
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+#include <WiFiClientSecure.h>
+#include <time.h>
+#include <ArduinoJson.h>
+#include <Crypto.h>
+#include <SHA256.h>
+
+// ============================================================================
+// CONFIGURACIÓN DE RED Y MQTT
+// ============================================================================
+const char* WIFI_SSID = "TU_RED_WIFI";
+const char* WIFI_PASSWORD = "TU_PASSWORD_WIFI";
+
+const char* MQTT_SERVER = "192.168.1.100";  // IP de Raspberry Pi
+const int MQTT_PORT = 8883;                 // Puerto MQTTS
+
+// Identificación del dispositivo
+const char* DEVICE_ID = "ESP8266_001";
+const char* MQTT_USER = "ESP8266_001";
+const char* MQTT_PASSWORD = "";  // Autenticación por certificado
+
+// ============================================================================
+// CONFIGURACIÓN DE CERTIFICADOS
+// ============================================================================
+// IMPORTANTE: Reemplazar con tus certificados reales
+
+// Certificado CA (ca.crt)
+const char* CA_CERT = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIUXXXXXXXXXXXXXXXXXXXXXXXXXXXwDQYJKoZIhvcNAQEL
+BQAwRTELMAkGA1UEBhMCTVgxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNDAxMDEwMDAwMDBaFw0zNDAx
+MDEwMDAwMDBaMEUxCzAJBgNVBAYTAk1YMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggIiMA0GCSqGSIb3DQEB
+AQUAA4ICDwAwggIKAoICAQDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+... (certificado completo)
+-----END CERTIFICATE-----
+)EOF";
+
+// Certificado del cliente (ESP8266_001.crt)
+const char* CLIENT_CERT = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIUYYYYYYYYYYYYYYYYYYYYYYYYYYYwDQYJKoZIhvcNAQEL
+... (certificado del dispositivo)
+-----END CERTIFICATE-----
+)EOF";
+
+// Clave privada del cliente (ESP8266_001-key.pem)
+const char* CLIENT_KEY = R"EOF(
+-----BEGIN PRIVATE KEY-----
+MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQDYYYYYYYYYYYYY
+... (clave privada del dispositivo)
+-----END PRIVATE KEY-----
+)EOF";
+
+// ============================================================================
+// CONFIGURACIÓN DE TÓPICOS
+// ============================================================================
+const char* TOPIC_STATUS = "garden/device/esp001/status";
+const char* TOPIC_SENSORS = "garden/device/esp001/sensors/";
+const char* TOPIC_CONFIG = "garden/device/esp001/config/#";
+const char* TOPIC_ALERTS = "garden/system/alerts";
+
+// ============================================================================
+// CONFIGURACIÓN DE SENSORES (ajustar según hardware)
+// ============================================================================
+const int PIN_TEMP_SENSOR = A0;      // Sensor de temperatura
+const int PIN_HUMIDITY_SENSOR = D1;   // Sensor de humedad
+const int PIN_SOIL_SENSOR = D2;       // Sensor de humedad de suelo
+const int PIN_LED_STATUS = D4;        // LED de estado (Built-in)
+
+// ============================================================================
+// VARIABLES GLOBALES
+// ============================================================================
+WiFiClientSecure espClient;
+PubSubClient mqttClient(espClient);
+
+// Buffer para JSON
+StaticJsonDocument<512> jsonDoc;
+
+// Timing
+unsigned long lastSensorRead = 0;
+unsigned long lastHeartbeat = 0;
+const unsigned long SENSOR_INTERVAL = 30000;  // 30 segundos
+const unsigned long HEARTBEAT_INTERVAL = 60000;  // 1 minuto
+
+// Clave HMAC (debe coincidir con el servidor)
+const char* HMAC_KEY = "ESP001_SECRET_KEY_2024";
+
+// ============================================================================
+// FUNCIONES DE CONFIGURACIÓN
+// ============================================================================
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  Serial.println("\n\n=== Garden MQTT Secure Client ===");
+  Serial.println("Device: " + String(DEVICE_ID));
+  
+  // Configurar pines
+  pinMode(PIN_LED_STATUS, OUTPUT);
+  pinMode(PIN_TEMP_SENSOR, INPUT);
+  pinMode(PIN_HUMIDITY_SENSOR, INPUT);
+  pinMode(PIN_SOIL_SENSOR, INPUT);
+  
+  // Parpadeo inicial
+  blinkLED(3, 200);
+  
+  // Conectar WiFi
+  setupWiFi();
+  
+  // Sincronizar tiempo (necesario para validar certificados)
+  setupTime();
+  
+  // Configurar certificados TLS
+  setupTLS();
+  
+  // Configurar MQTT
+  mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
+  mqttClient.setCallback(mqttCallback);
+  mqttClient.setKeepAlive(60);
+  mqttClient.setSocketTimeout(30);
+  
+  // Conectar MQTT
+  connectMQTT();
+  
+  Serial.println("=== Configuración completa ===\n");
+}
+
+void setupWiFi() {
+  Serial.print("Conectando a WiFi: ");
+  Serial.println(WIFI_SSID);
+  
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    delay(500);
+    Serial.print(".");
+    digitalWrite(PIN_LED_STATUS, !digitalRead(PIN_LED_STATUS));
+    attempts++;
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n✓ WiFi conectado");
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
+    Serial.print("RSSI: ");
+    Serial.println(WiFi.RSSI());
+    digitalWrite(PIN_LED_STATUS, HIGH);
+  } else {
+    Serial.println("\n✗ Error conectando WiFi");
+    ESP.restart();
+  }
+}
+
+void setupTime() {
+  Serial.print("Sincronizando tiempo NTP...");
+  
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  
+  time_t now = time(nullptr);
+  int attempts = 0;
+  
+  while (now < 8 * 3600 * 2 && attempts < 20) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
+    attempts++;
+  }
+  
+  if (now >= 8 * 3600 * 2) {
+    Serial.println(" ✓");
+    struct tm timeinfo;
+    gmtime_r(&now, &timeinfo);
+    Serial.print("Fecha/Hora actual: ");
+    Serial.println(asctime(&timeinfo));
+  } else {
+    Serial.println(" ✗ Error sincronizando tiempo");
+  }
+}
+
+void setupTLS() {
+  Serial.println("Configurando TLS...");
+  
+  // Establecer certificados
+  espClient.setCACert(CA_CERT);
+  espClient.setCertificate(CLIENT_CERT);
+  espClient.setPrivateKey(CLIENT_KEY);
+  
+  // Configuración de seguridad
+  espClient.setInsecure();  // Para desarrollo; en producción verificar hostname
+  
+  Serial.println("✓ TLS configurado");
+}
+
+void connectMQTT() {
+  Serial.println("Conectando a broker MQTT...");
+  
+  int attempts = 0;
+  while (!mqttClient.connected() && attempts < 5) {
+    Serial.print("Intento ");
+    Serial.print(attempts + 1);
+    Serial.print("/5... ");
+    
+    // Intentar conexión
+    if (mqttClient.connect(DEVICE_ID, MQTT_USER, MQTT_PASSWORD)) {
+      Serial.println("✓ Conectado");
+      
+      // Suscribirse a tópicos de configuración
+      mqttClient.subscribe(TOPIC_CONFIG);
+      Serial.println("✓ Suscrito a: " + String(TOPIC_CONFIG));
+      
+      // Publicar mensaje de inicio
+      publishStatus("online");
+      
+      blinkLED(2, 100);
+      
+    } else {
+      Serial.print("✗ Error: ");
+      Serial.println(mqttClient.state());
+      delay(5000);
+    }
+    
+    attempts++;
+  }
+  
+  if (!mqttClient.connected()) {
+    Serial.println("✗ No se pudo conectar a MQTT. Reiniciando...");
+    delay(5000);
+    ESP.restart();
+  }
+}
+
+// ============================================================================
+// CALLBACK MQTT
+// ============================================================================
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Mensaje recibido [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  
+  // Convertir payload a string
+  String message = "";
+  for (unsigned int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  Serial.println(message);
+  
+  // Procesar mensaje
+  processCommand(topic, message);
+}
+
+void processCommand(String topic, String message) {
+  // Parsear JSON
+  DeserializationError error = deserializeJson(jsonDoc, message);
+  
+  if (error) {
+    Serial.print("Error parseando JSON: ");
+    Serial.println(error.c_str());
+    return;
+  }
+  
+  // Verificar firma HMAC
+  if (!verifyHMAC(message)) {
+    Serial.println("✗ Firma HMAC inválida");
+    publishAlert("invalid_hmac", "Mensaje con firma inválida recibido");
+    return;
+  }
+  
+  // Procesar comandos según tópico
+  if (topic.indexOf("/config/") > 0) {
+    handleConfigCommand(jsonDoc);
+  }
+}
+
+void handleConfigCommand(JsonDocument& doc) {
+  // Manejar comandos de configuración
+  if (doc.containsKey("sensor_interval")) {
+    unsigned long newInterval = doc["sensor_interval"];
+    if (newInterval >= 10000 && newInterval <= 300000) {
+      // Actualizar intervalo de sensores (10s - 5min)
+      Serial.println("✓ Intervalo actualizado: " + String(newInterval) + "ms");
+    }
+  }
+  
+  if (doc.containsKey("reboot")) {
+    bool reboot = doc["reboot"];
+    if (reboot) {
+      Serial.println("⚠ Reinicio solicitado");
+      publishStatus("rebooting");
+      delay(1000);
+      ESP.restart();
+    }
+  }
+}
+
+// ============================================================================
+// FUNCIONES DE SEGURIDAD
+// ============================================================================
+
+bool verifyHMAC(String message) {
+  // Parsear JSON para extraer firma
+  StaticJsonDocument<512> doc;
+  DeserializationError error = deserializeJson(doc, message);
+  
+  if (error || !doc.containsKey("signature")) {
+    return false;
+  }
+  
+  String receivedSignature = doc["signature"].as<String>();
+  
+  // Remover firma del mensaje
+  doc.remove("signature");
+  String messageWithoutSignature;
+  serializeJson(doc, messageWithoutSignature);
+  
+  // Calcular HMAC esperado
+  String expectedSignature = calculateHMAC(messageWithoutSignature);
+  
+  // Comparar
+  return (receivedSignature == expectedSignature);
+}
+
+String calculateHMAC(String message) {
+  SHA256 sha256;
+  
+  // Preparar HMAC-SHA256
+  sha256.resetHMAC(HMAC_KEY, strlen(HMAC_KEY));
+  sha256.update(message.c_str(), message.length());
+  
+  // Obtener hash
+  uint8_t hash[32];
+  sha256.finalizeHMAC(HMAC_KEY, strlen(HMAC_KEY), hash, sizeof(hash));
+  
+  // Convertir a hexadecimal
+  String hmacHex = "";
+  for (int i = 0; i < 32; i++) {
+    if (hash[i] < 16) hmacHex += "0";
+    hmacHex += String(hash[i], HEX);
+  }
+  
+  return hmacHex;
+}
+
+String createSignedMessage(JsonDocument& doc) {
+  // Agregar timestamp
+  doc["timestamp"] = time(nullptr);
+  
+  // Serializar sin firma
+  String message;
+  serializeJson(doc, message);
+  
+  // Calcular HMAC
+  String signature = calculateHMAC(message);
+  
+  // Agregar firma
+  doc["signature"] = signature;
+  
+  // Serializar mensaje final
+  String signedMessage;
+  serializeJson(doc, signedMessage);
+  
+  return signedMessage;
+}
+
+// ============================================================================
+// FUNCIONES DE PUBLICACIÓN
+// ============================================================================
+
+void publishStatus(String status) {
+  jsonDoc.clear();
+  jsonDoc["device_id"] = DEVICE_ID;
+  jsonDoc["status"] = status;
+  jsonDoc["uptime"] = millis();
+  jsonDoc["wifi_rssi"] = WiFi.RSSI();
+  jsonDoc["free_heap"] = ESP.getFreeHeap();
+  
+  String message = createSignedMessage(jsonDoc);
+  
+  if (mqttClient.publish(TOPIC_STATUS, message.c_str(), true)) {
+    Serial.println("✓ Status publicado: " + status);
+  } else {
+    Serial.println("✗ Error publicando status");
+  }
+}
+
+void publishSensorData(String sensorType, float value, String unit) {
+  jsonDoc.clear();
+  jsonDoc["device_id"] = DEVICE_ID;
+  jsonDoc["sensor"] = sensorType;
+  jsonDoc["value"] = value;
+  jsonDoc["unit"] = unit;
+  
+  String message = createSignedMessage(jsonDoc);
+  String topic = String(TOPIC_SENSORS) + sensorType;
+  
+  if (mqttClient.publish(topic.c_str(), message.c_str())) {
+    Serial.println("✓ Sensor publicado: " + sensorType + " = " + String(value) + " " + unit);
+  } else {
+    Serial.println("✗ Error publicando sensor");
+  }
+}
+
+void publishAlert(String alertType, String description) {
+  jsonDoc.clear();
+  jsonDoc["device_id"] = DEVICE_ID;
+  jsonDoc["alert_type"] = alertType;
+  jsonDoc["description"] = description;
+  jsonDoc["severity"] = "warning";
+  
+  String message = createSignedMessage(jsonDoc);
+  
+  if (mqttClient.publish(TOPIC_ALERTS, message.c_str())) {
+    Serial.println("⚠ Alerta publicada: " + alertType);
+  }
+}
+
+// ============================================================================
+// FUNCIONES DE SENSORES
+// ============================================================================
+
+void readAndPublishSensors() {
+  // Leer temperatura (ejemplo con sensor analógico)
+  int tempRaw = analogRead(PIN_TEMP_SENSOR);
+  float temperature = map(tempRaw, 0, 1023, 0, 100);  // Ajustar según sensor
+  publishSensorData("temperature", temperature, "°C");
+  
+  
