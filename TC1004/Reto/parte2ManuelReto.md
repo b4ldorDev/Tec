@@ -47,7 +47,15 @@ python3 /opt/mqtt-secure/scripts/totp_manager.py team1_sensor
 # Revisar logs de totp-manager
 tail -n 200 /var/log/mqtt-secure/logger.log
 ```
+para los errores 
+```
+sudo mkdir -p /opt/mqtt-secure/config
+sudo chown $(whoami):$(whoami) /opt/mqtt-secure/config
+sudo chmod 700 /opt/mqtt-secure/config
 
+# Volver a intentar
+python3 /opt/mqtt-secure/scripts/totp_manager.py team1_sensor
+```
 ---
 
 ## 6. AUTORIZACIÓN GRANULAR (completado)
