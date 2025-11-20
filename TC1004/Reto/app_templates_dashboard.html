@@ -1,0 +1,37 @@
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Garden MQTT - Pixel Mario Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mario.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Garden MQTT - Pixel Mario Dashboard</h1>
+  </header>
+
+  <main class="container">
+    <section class="left">
+      <div id="mario" class="pixel-sprite" aria-hidden="true"></div>
+      <div class="panel">
+        <h2>Estado</h2>
+        <ul id="status-list"></ul>
+      </div>
+    </section>
+    <section class="right">
+      <div class="panel">
+        <h2>Últimos mensajes</h2>
+        <ul id="messages"></ul>
+      </div>
+      <div class="panel">
+        <h2>Métricas</h2>
+        <div id="metrics">Conectando...</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

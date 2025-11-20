@@ -1,0 +1,5 @@
+# /opt/mqtt-dashboard/requirements.txt
+flask
+flask-socketio
+eventlet
+paho-mqtt

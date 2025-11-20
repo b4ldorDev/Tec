@@ -1,0 +1,19 @@
+# /etc/systemd/system/mqtt-dashboard.service
+[Unit]
+Description=MQTT Dashboard (Flask + SocketIO)
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+WorkingDirectory=/opt/mqtt-dashboard
+Environment="PATH=/opt/mqtt-dashboard/.venv/bin"
+ExecStart=/opt/mqtt-dashboard/.venv/bin/python /opt/mqtt-dashboard/server.py
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=mqtt-dashboard
+
+[Install]
+WantedBy=multi-user.target
